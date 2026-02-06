@@ -29,7 +29,9 @@ import random
 import re
 import urllib
 import urllib.parse
+from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple, cast
 
 import httpx
@@ -86,6 +88,8 @@ async def find_qrcode_img_from_canvas(page: Page, canvas_selector: str) -> str:
 
 def show_qrcode(qr_code) -> None:  # type: ignore
     """parse base64 encode qrcode image and show it"""
+    import config
+
     if "," in qr_code:
         qr_code = qr_code.split(",")[1]
     qr_code = base64.b64decode(qr_code)
@@ -97,6 +101,17 @@ def show_qrcode(qr_code) -> None:  # type: ignore
     new_image.paste(image, (10, 10))
     draw = ImageDraw.Draw(new_image)
     draw.rectangle((0, 0, width + 19, height + 19), outline=(0, 0, 0), width=1)
+
+    if getattr(config, "REMOTE_RUN", False):
+        # Remote mode: persist QR image in project directory for external retrieval.
+        qrcode_dir = Path.cwd() / "browser_data" / "qrcodes"
+        qrcode_dir.mkdir(parents=True, exist_ok=True)
+        qrcode_path = qrcode_dir / f"qrcode_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.png"
+        new_image.save(qrcode_path)
+        utils.logger.info(f"[show_qrcode] remote_run enabled, qrcode saved: {qrcode_path}")
+        return
+
+    # Local mode: keep temporary popup behavior.
     del ImageShow.UnixViewer.options["save_all"]
     new_image.show()
 

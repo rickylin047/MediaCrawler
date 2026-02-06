@@ -208,6 +208,16 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
                 show_default=True,
             ),
         ] = str(config.HEADLESS),
+        remote_run: Annotated[
+            bool,
+            typer.Option(
+                "--remote_run",
+                help="Remote CLI mode switch. If set, save login QR to project folder; otherwise keep temporary popup behavior.",
+                rich_help_panel="Runtime Configuration",
+                show_default=True,
+                is_flag=True,
+            ),
+        ] = config.REMOTE_RUN,
         save_data_option: Annotated[
             SaveDataOptionEnum,
             typer.Option(
@@ -280,6 +290,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
         enable_comment = _to_bool(get_comment)
         enable_sub_comment = _to_bool(get_sub_comment)
         enable_headless = _to_bool(headless)
+        enable_remote_run = remote_run
         init_db_value = init_db.value if init_db else None
 
         # Parse specified_id and creator_id into lists
@@ -296,6 +307,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
         config.ENABLE_GET_SUB_COMMENTS = enable_sub_comment
         config.HEADLESS = enable_headless
         config.CDP_HEADLESS = enable_headless
+        config.REMOTE_RUN = enable_remote_run
         config.SAVE_DATA_OPTION = save_data_option.value
         config.COOKIES = cookies
         config.CRAWLER_MAX_COMMENTS_COUNT_SINGLENOTES = max_comments_count_singlenotes
@@ -336,6 +348,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
             get_comment=config.ENABLE_GET_COMMENTS,
             get_sub_comment=config.ENABLE_GET_SUB_COMMENTS,
             headless=config.HEADLESS,
+            remote_run=config.REMOTE_RUN,
             save_data_option=config.SAVE_DATA_OPTION,
             init_db=init_db_value,
             cookies=config.COOKIES,

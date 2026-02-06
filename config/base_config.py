@@ -40,6 +40,11 @@ IP_PROXY_PROVIDER_NAME = "kuaidaili"  # kuaidaili | wandouhttp
 # 抖音如果一直提示失败，打开浏览器看下是否扫码登录之后出现了手机号验证，如果出现了手动过一下再试。
 HEADLESS = False
 
+# 是否为远程CLI运行（例如通过 ssh 执行）
+# True: 二维码图片保存到项目目录，便于远程回传
+# False: 保持本地临时弹窗显示二维码
+REMOTE_RUN = False
+
 # 是否保存登录状态
 SAVE_LOGIN_STATE = True
 
