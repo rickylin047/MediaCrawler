@@ -31,6 +31,7 @@ import config
 from base.base_crawler import AbstractApiClient
 from proxy.proxy_mixin import ProxyRefreshMixin
 from tools import utils
+from tools.httpx_util import make_async_client
 
 if TYPE_CHECKING:
     from proxy.proxy_ip_pool import ProxyIpPool
@@ -55,6 +56,7 @@ class KuaiShouClient(AbstractApiClient, ProxyRefreshMixin):
         self.headers = headers
         self._host = "https://www.kuaishou.com/graphql"
         self._rest_host = "https://www.kuaishou.com"
+        self.cookie_urls = [self._rest_host]
         self.playwright_page = playwright_page
         self.cookie_dict = cookie_dict
         self.graphql = KuaiShouGraphQL()
@@ -65,7 +67,7 @@ class KuaiShouClient(AbstractApiClient, ProxyRefreshMixin):
         # Check if proxy is expired before each request
         await self._refresh_proxy_if_expired()
 
-        async with httpx.AsyncClient(proxy=self.proxy) as client:
+        async with make_async_client(proxy=self.proxy) as client:
             response = await client.request(method, url, timeout=self.timeout, **kwargs)
         data: Dict = response.json()
         if data.get("errors"):
@@ -97,7 +99,7 @@ class KuaiShouClient(AbstractApiClient, ProxyRefreshMixin):
         await self._refresh_proxy_if_expired()
 
         json_str = json.dumps(data, separators=(",", ":"), ensure_ascii=False)
-        async with httpx.AsyncClient(proxy=self.proxy) as client:
+        async with make_async_client(proxy=self.proxy) as client:
             response = await client.request(
                 method="POST",
                 url=f"{self._rest_host}{uri}",
@@ -132,8 +134,11 @@ class KuaiShouClient(AbstractApiClient, ProxyRefreshMixin):
             ping_flag = False
         return ping_flag
 
-    async def update_cookies(self, browser_context: BrowserContext):
-        cookie_str, cookie_dict = utils.convert_cookies(await browser_context.cookies())
+    async def update_cookies(self, browser_context: BrowserContext, urls: Optional[list[str]] = None):
+        cookie_str, cookie_dict = await utils.convert_browser_context_cookies(
+            browser_context,
+            urls=urls or self.cookie_urls,
+        )
         self.headers["Cookie"] = cookie_str
         self.cookie_dict = cookie_dict
 

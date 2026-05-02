@@ -20,11 +20,12 @@
 import asyncio
 import json
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 import httpx
 from playwright.async_api import BrowserContext, Page
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_not_exception_type
+from tools.httpx_util import make_async_client
 
 import config
 from base.base_crawler import AbstractApiClient
@@ -38,7 +39,7 @@ from .exception import DataFetchError, IPBlockError, NoteNotFoundError
 from .field import SearchNoteType, SearchSortType
 from .help import get_search_id
 from .extractor import XiaoHongShuExtractor
-from .playwright_sign import sign_with_playwright
+from .playwright_sign import sign_with_xhshow
 
 
 class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
@@ -56,8 +57,13 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
         self.proxy = proxy
         self.timeout = timeout
         self.headers = headers
-        self._host = "https://edith.xiaohongshu.com"
-        self._domain = "https://www.xiaohongshu.com"
+        if config.XHS_INTERNATIONAL:
+            self._host = "https://webapi.rednote.com"
+            self._domain = "https://www.rednote.com"
+        else:
+            self._host = "https://edith.xiaohongshu.com"
+            self._domain = "https://www.xiaohongshu.com"
+        self.cookie_urls = [self._domain]
         self.IP_ERROR_STR = "Network connection error, please check network settings or restart"
         self.IP_ERROR_CODE = 300012
         self.NOTE_NOT_FOUND_CODE = -510000
@@ -70,19 +76,16 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
         self.init_proxy_pool(proxy_ip_pool)
 
     async def _pre_headers(self, url: str, params: Optional[Dict] = None, payload: Optional[Dict] = None) -> Dict:
-        """Request header parameter signing (using playwright injection method)
+        """请求头参数签名 (使用 xhshow 纯算法)
 
         Args:
-            url: Request URL
-            params: GET request parameters
-            payload: POST request parameters
+            url: 请求 URI path
+            params: GET 请求参数
+            payload: POST 请求参数
 
         Returns:
-            Dict: Signed request header parameters
+            Dict: 签名后的请求头参数
         """
-        a1_value = self.cookie_dict.get("a1", "")
-
-        # Determine request data, method and URI
         if params is not None:
             data = params
             method = "GET"
@@ -92,12 +95,11 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
         else:
             raise ValueError("params or payload is required")
 
-        # Generate signature using playwright injection method
-        signs = await sign_with_playwright(
-            page=self.playwright_page,
+        # 使用 xhshow 纯算法生成签名
+        signs = sign_with_xhshow(
             uri=url,
             data=data,
-            a1=a1_value,
+            cookie_str=self.headers.get("Cookie", ""),
             method=method,
         )
 
@@ -127,7 +129,7 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
 
         # return response.text
         return_response = kwargs.pop("return_response", False)
-        async with httpx.AsyncClient(proxy=self.proxy) as client:
+        async with make_async_client(proxy=self.proxy) as client:
             response = await client.request(method, url, timeout=self.timeout, **kwargs)
 
         if response.status_code == 471 or response.status_code == 461:
@@ -151,6 +153,15 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
             err_msg = data.get("msg", None) or f"{response.text}"
             raise DataFetchError(err_msg)
 
+    @staticmethod
+    def _build_query_string(params: Dict) -> str:
+        """Build URL query string with encoding matching browser behavior (commas not encoded)"""
+        parts = []
+        for key, value in params.items():
+            value_str = str(value) if value is not None else ""
+            parts.append(f"{key}={quote(value_str, safe=',')}")
+        return "&".join(parts)
+
     async def get(self, uri: str, params: Optional[Dict] = None) -> Dict:
         """
         GET request, signs request headers
@@ -162,10 +173,15 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
 
         """
         headers = await self._pre_headers(uri, params)
-        full_url = f"{self._host}{uri}"
+        # Build URL manually to ensure query string encoding matches the sign string
+        # (httpx's default params encoding differs from browser/XHS frontend behavior)
+        if params:
+            full_url = f"{self._host}{uri}?{self._build_query_string(params)}"
+        else:
+            full_url = f"{self._host}{uri}"
 
         return await self.request(
-            method="GET", url=full_url, headers=headers, params=params
+            method="GET", url=full_url, headers=headers
         )
 
     async def post(self, uri: str, data: dict, **kwargs) -> Dict:
@@ -192,7 +208,7 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
         # Check if proxy is expired before request
         await self._refresh_proxy_if_expired()
 
-        async with httpx.AsyncClient(proxy=self.proxy) as client:
+        async with make_async_client(proxy=self.proxy) as client:
             try:
                 response = await client.request("GET", url, timeout=self.timeout)
                 response.raise_for_status()
@@ -219,7 +235,7 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
         """
         uri = "/api/sns/web/v1/user/selfinfo"
         headers = await self._pre_headers(uri, params={})
-        async with httpx.AsyncClient(proxy=self.proxy) as client:
+        async with make_async_client(proxy=self.proxy) as client:
             response = await client.get(f"{self._host}{uri}", headers=headers)
             if response.status_code == 200:
                 return response.json()
@@ -245,7 +261,7 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
         utils.logger.info(f"[XiaoHongShuClient.pong] Login state result: {ping_flag}")
         return ping_flag
 
-    async def update_cookies(self, browser_context: BrowserContext):
+    async def update_cookies(self, browser_context: BrowserContext, urls: Optional[list[str]] = None):
         """
         Update cookies method provided by API client, usually called after successful login
         Args:
@@ -254,7 +270,10 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
         Returns:
 
         """
-        cookie_str, cookie_dict = utils.convert_cookies(await browser_context.cookies())
+        cookie_str, cookie_dict = await utils.convert_browser_context_cookies(
+            browser_context,
+            urls=urls or self.cookie_urls,
+        )
         self.headers["Cookie"] = cookie_str
         self.cookie_dict = cookie_dict
 
@@ -460,44 +479,61 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
 
         result = []
         for comment in comments:
-            note_id = comment.get("note_id")
-            sub_comments = comment.get("sub_comments")
-            if sub_comments and callback:
-                await callback(note_id, sub_comments)
+            try:
+                note_id = comment.get("note_id")
+                sub_comments = comment.get("sub_comments")
+                if sub_comments and callback:
+                    await callback(note_id, sub_comments)
 
-            sub_comment_has_more = comment.get("sub_comment_has_more")
-            if not sub_comment_has_more:
-                continue
-
-            root_comment_id = comment.get("id")
-            sub_comment_cursor = comment.get("sub_comment_cursor")
-
-            while sub_comment_has_more:
-                comments_res = await self.get_note_sub_comments(
-                    note_id=note_id,
-                    root_comment_id=root_comment_id,
-                    xsec_token=xsec_token,
-                    num=10,
-                    cursor=sub_comment_cursor,
-                )
-
-                if comments_res is None:
-                    utils.logger.info(
-                        f"[XiaoHongShuClient.get_comments_all_sub_comments] No response found for note_id: {note_id}"
-                    )
+                sub_comment_has_more = comment.get("sub_comment_has_more")
+                if not sub_comment_has_more:
                     continue
-                sub_comment_has_more = comments_res.get("has_more", False)
-                sub_comment_cursor = comments_res.get("cursor", "")
-                if "comments" not in comments_res:
-                    utils.logger.info(
-                        f"[XiaoHongShuClient.get_comments_all_sub_comments] No 'comments' key found in response: {comments_res}"
-                    )
-                    break
-                comments = comments_res["comments"]
-                if callback:
-                    await callback(note_id, comments)
-                await asyncio.sleep(crawl_interval)
-                result.extend(comments)
+
+                root_comment_id = comment.get("id")
+                sub_comment_cursor = comment.get("sub_comment_cursor")
+
+                while sub_comment_has_more:
+                    try:
+                        comments_res = await self.get_note_sub_comments(
+                            note_id=note_id,
+                            root_comment_id=root_comment_id,
+                            xsec_token=xsec_token,
+                            num=10,
+                            cursor=sub_comment_cursor,
+                        )
+
+                        if comments_res is None:
+                            utils.logger.info(
+                                f"[XiaoHongShuClient.get_comments_all_sub_comments] No response found for note_id: {note_id}"
+                            )
+                            break
+                        sub_comment_has_more = comments_res.get("has_more", False)
+                        sub_comment_cursor = comments_res.get("cursor", "")
+                        if "comments" not in comments_res:
+                            utils.logger.info(
+                                f"[XiaoHongShuClient.get_comments_all_sub_comments] No 'comments' key found in response: {comments_res}"
+                            )
+                            break
+                        comments = comments_res["comments"]
+                        if callback:
+                            await callback(note_id, comments)
+                        await asyncio.sleep(crawl_interval)
+                        result.extend(comments)
+                    except DataFetchError as e:
+                        utils.logger.warning(
+                            f"[XiaoHongShuClient.get_comments_all_sub_comments] Failed to get sub-comments for note_id: {note_id}, root_comment_id: {root_comment_id}, error: {e}. Skipping this comment's sub-comments."
+                        )
+                        break  # Break out of the sub-comment acquisition loop of the current comment and continue processing the next comment
+                    except Exception as e:
+                        utils.logger.error(
+                            f"[XiaoHongShuClient.get_comments_all_sub_comments] Unexpected error when getting sub-comments for note_id: {note_id}, root_comment_id: {root_comment_id}, error: {e}"
+                        )
+                        break
+            except Exception as e:
+                utils.logger.error(
+                    f"[XiaoHongShuClient.get_comments_all_sub_comments] Error processing comment: {comment.get('id', 'unknown')}, error: {e}. Continuing with next comment."
+                )
+                continue  # Continue to next comment
         return result
 
     async def get_creator_info(
@@ -550,6 +586,7 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
             "num": page_size,
             "cursor": cursor,
             "user_id": creator,
+            "image_formats": "jpg,webp,avif",
             "xsec_token": xsec_token,
             "xsec_source": xsec_source,
         }
@@ -652,7 +689,7 @@ class XiaoHongShuClient(AbstractApiClient, ProxyRefreshMixin):
 
         """
         url = (
-            "https://www.xiaohongshu.com/explore/"
+            f"{self._domain}/explore/"
             + note_id
             + f"?xsec_token={xsec_token}&xsec_source={xsec_source}"
         )

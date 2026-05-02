@@ -1,16 +1,3 @@
-<div align="center" markdown="1">
-   <sup>Special thanks to:</sup>
-   <br>
-   <br>
-   <a href="https://go.warp.dev/MediaCrawler">
-      <img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-02.png?raw=true">
-   </a>
-
-### [Warp is built for coding with multiple AI agents](https://go.warp.dev/MediaCrawler)
-
-
-</div>
-<hr>
 # 🔥 MediaCrawler - Social Media Platform Crawler 🕷️
 
 <div align="center">
@@ -234,7 +221,7 @@ python main.py --help
 
 ## 💾 Data Storage
 
-MediaCrawler supports multiple data storage methods, including CSV, JSON, Excel, SQLite, and MySQL databases.
+MediaCrawler supports multiple data storage methods, including CSV, JSON, JSONL, Excel, SQLite, and MySQL databases.
 
 📖 **For detailed usage instructions, please see: [Data Storage Guide](docs/data_storage_guide.md)**
 
@@ -255,16 +242,16 @@ MediaCrawler supports multiple data storage methods, including CSV, JSON, Excel,
 TikHub.io provides 900+ highly stable data interfaces, covering 14+ mainstream domestic and international platforms including TK, DY, XHS, Y2B, Ins, X, etc. Supports multi-dimensional public data APIs for users, content, products, comments, etc., with 40M+ cleaned structured datasets. Use invitation code <code>cfzyejV9</code> to register and recharge, and get an additional $2 bonus.
 </a>
 
----
-
-<a href="https://www.thordata.com/?ls=github&lk=mediacrawler">
-<img width="500" src="docs/static/images/Thordata.png">
 <br>
-Thordata: Reliable and cost-effective proxy service provider. Provides stable, efficient and compliant global proxy IP services for enterprises and developers. Register now to get 1GB free residential proxy trial and 2000 serp-api calls.
+<br>
+
+<a href="https://legionproxy.io/?utm_source=github&utm_campaign=mediacrawler">
+<img width="420" src="docs/static/images/legionproxy_banner.jpg" alt="LegionProxy residential proxy sponsor banner">
+<br>
+LegionProxy provides residential proxies built for account registration and automation, with 74M+ real residential IPs, 195+ countries, HTTP/3 high-speed connections, and pricing from $0.60/GB.
 </a>
-<br>
-<a href="https://www.thordata.com/products/residential-proxies/?ls=github&lk=mediacrawler">【Residential Proxies】</a> | <a href="https://www.thordata.com/products/web-scraper/?ls=github&lk=mediacrawler">【serp-api】</a>
 
+---
 
 ### 🤝 Become a Sponsor
 

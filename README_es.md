@@ -1,17 +1,3 @@
-<div align="center" markdown="1">
-   <sup>Special thanks to:</sup>
-   <br>
-   <br>
-   <a href="https://go.warp.dev/MediaCrawler">
-      <img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-02.png?raw=true">
-   </a>
-
-### [Warp is built for coding with multiple AI agents](https://go.warp.dev/MediaCrawler)
-
-
-</div>
-<hr>
-
 # 🔥 MediaCrawler - Rastreador de Plataformas de Redes Sociales 🕷️
 
 <div align="center">
@@ -235,7 +221,7 @@ python main.py --help
 
 ## 💾 Almacenamiento de Datos
 
-MediaCrawler soporta múltiples métodos de almacenamiento de datos, incluyendo CSV, JSON, Excel, SQLite y bases de datos MySQL.
+MediaCrawler soporta múltiples métodos de almacenamiento de datos, incluyendo CSV, JSON, JSONL, Excel, SQLite y bases de datos MySQL.
 
 📖 **Para instrucciones de uso detalladas, por favor vea: [Guía de Almacenamiento de Datos](docs/data_storage_guide.md)**
 
@@ -257,15 +243,6 @@ TikHub.io proporciona 900+ interfaces de datos altamente estables, cubriendo 14+
 </a>
 
 ---
-
-<a href="https://www.thordata.com/?ls=github&lk=mediacrawler">
-<img width="500" src="docs/static/images/Thordata.png">
-<br>
-Thordata: Proveedor de servicios de proxy confiable y rentable. Proporciona servicios de IP proxy global estables, eficientes y conformes para empresas y desarrolladores. Regístrese ahora para obtener 1GB de prueba gratuita de proxy residencial y 2000 llamadas serp-api.
-</a>
-<br>
-<a href="https://www.thordata.com/products/residential-proxies/?ls=github&lk=mediacrawler">【Proxies Residenciales】</a> | <a href="https://www.thordata.com/products/web-scraper/?ls=github&lk=mediacrawler">【serp-api】</a>
-
 
 ### 🤝 Conviértase en Patrocinador
 

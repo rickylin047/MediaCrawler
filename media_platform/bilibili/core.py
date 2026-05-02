@@ -62,6 +62,7 @@ class BilibiliCrawler(AbstractCrawler):
 
     def __init__(self):
         self.index_url = "https://www.bilibili.com"
+        self.cookie_urls = [self.index_url]
         self.user_agent = utils.get_user_agent()
         self.cdp_manager = None
         self.ip_proxy_pool = None  # Proxy IP pool for automatic proxy refresh
@@ -105,7 +106,10 @@ class BilibiliCrawler(AbstractCrawler):
                     cookie_str=config.COOKIES,
                 )
                 await login_obj.begin()
-                await self.bili_client.update_cookies(browser_context=self.browser_context)
+                await self.bili_client.update_cookies(
+                    browser_context=self.browser_context,
+                    urls=self.cookie_urls,
+                )
 
             crawler_type_var.set(config.CRAWLER_TYPE)
             if config.CRAWLER_TYPE == "search":
@@ -462,7 +466,10 @@ class BilibiliCrawler(AbstractCrawler):
         :return: bilibili client
         """
         utils.logger.info("[BilibiliCrawler.create_bilibili_client] Begin create bilibili API client ...")
-        cookie_str, cookie_dict = utils.convert_cookies(await self.browser_context.cookies())
+        cookie_str, cookie_dict = await utils.convert_browser_context_cookies(
+            self.browser_context,
+            urls=self.cookie_urls,
+        )
         bilibili_client_obj = BilibiliClient(
             proxy=httpx_proxy,
             headers={
@@ -474,7 +481,7 @@ class BilibiliCrawler(AbstractCrawler):
             },
             playwright_page=self.context_page,
             cookie_dict=cookie_dict,
-            proxy_ip_pool=self.ip_proxy_pool,  # 传递代理池用于自动刷新
+            proxy_ip_pool=self.ip_proxy_pool,  # Pass proxy pool for automatic refresh
         )
         return bilibili_client_obj
 

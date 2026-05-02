@@ -1,19 +1,5 @@
 # 🔥 MediaCrawler - 自媒体平台爬虫 🕷️
 
-<div align="center" markdown="1">
-   <sup>Special thanks to:</sup>
-   <br>
-   <br>
-   <a href="https://go.warp.dev/MediaCrawler">
-      <img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-02.png?raw=true">
-   </a>
-
-### [Warp is built for coding with multiple AI agents](https://go.warp.dev/MediaCrawler)
-
-
-</div>
-<hr>
-
 <div align="center">
 
 <a href="https://trendshift.io/repositories/8291" target="_blank">
@@ -88,6 +74,7 @@
 #### 🎁 额外功能
 - ✅ **自媒体视频下载器桌面端**（适合学习全栈开发）
 - ✅ **多平台首页信息流推荐**（HomeFeed）
+- ✅ **AI Agent Skill 支持**（[OpenClaw](https://openclaw.ai/) 🦞 / Claude Code / Cursor 一键安装，让 Agent 自动爬取数据）
 - [ ] **基于评论分析AI Agent正在开发中 🚀🚀**
 
 点击查看：[MediaCrawlerPro 项目主页](https://github.com/MediaCrawlerPro) 更多介绍
@@ -125,12 +112,28 @@ cd MediaCrawler
 uv sync
 ```
 
-### 🌐 浏览器驱动安装
+### 🌐 浏览器驱动安装（可选）
+
+> 如果使用默认的 CDP 模式（连接已有 Chrome 浏览器），**无需安装浏览器驱动**。仅在使用标准 Playwright 模式时需要安装。
 
 ```shell
-# 安装浏览器驱动
+# 仅在标准 Playwright 模式下需要安装浏览器驱动
 uv run playwright install
 ```
+
+### 🌍 Chrome 浏览器配置（推荐）
+
+项目默认使用 CDP 模式连接用户已有的 Chrome 浏览器，可以复用浏览器已有的登录状态、Cookie、扩展等，**大幅降低平台风控检测风险**。
+
+使用前需要：
+
+1. **安装最新版 Chrome 浏览器**（版本 >= 144），[下载地址](https://www.google.com/chrome/)
+2. **开启远程调试功能**：在 Chrome 地址栏输入 `chrome://inspect/#remote-debugging`，勾选 **"Allow remote debugging for this browser instance"**
+3. 页面显示 `Server running at: 127.0.0.1:9222` 表示已就绪
+
+> 💡 **提示**：运行爬虫后，Chrome 浏览器会弹出确认对话框，点击"接受"即可。程序会等待用户确认，60秒内操作完成即可。
+>
+> 如果不想使用 CDP 模式，可以在 `config/base_config.py` 中设置 `ENABLE_CDP_MODE = False` 切换为标准 Playwright 模式。
 
 ## 🚀 运行爬虫程序
 
@@ -236,7 +239,7 @@ python main.py --help
 
 ## 💾 数据保存
 
-MediaCrawler 支持多种数据存储方式，包括 CSV、JSON、Excel、SQLite 和 MySQL 数据库。
+MediaCrawler 支持多种数据存储方式，包括 CSV、JSON、JSONL、Excel、SQLite 和 MySQL 数据库。
 
 📖 **详细使用说明请查看：[数据存储指南](docs/data_storage_guide.md)**
 
@@ -257,16 +260,16 @@ MediaCrawler 支持多种数据存储方式，包括 CSV、JSON、Excel、SQLite
 TikHub.io 提供 900+ 高稳定性数据接口，覆盖 TK、DY、XHS、Y2B、Ins、X 等 14+ 海内外主流平台，支持用户、内容、商品、评论等多维度公开数据 API，并配套 4000 万+ 已清洗结构化数据集，使用邀请码 <code>cfzyejV9</code> 注册并充值，即可额外获得 $2 赠送额度。
 </a>
 
----
-
-<a href="https://www.thordata.com/?ls=github&lk=mediacrawler">
-<img width="500" src="docs/static/images/Thordata.png">
 <br>
-Thordata：可靠且经济高效的代理服务提供商。为企业和开发者提供稳定、高效且合规的全球代理 IP 服务。立即注册，赠送1GB住宅代理免费试用和2000次serp-api调用。
+<br>
+
+<a href="https://legionproxy.io/?utm_source=github&utm_campaign=mediacrawler">
+<img width="420" src="docs/static/images/legionproxy_banner.jpg" alt="LegionProxy residential proxy sponsor banner">
+<br>
+LegionProxy 专为账号注册与自动化场景提供住宅代理网络，覆盖 74M+ 真实住宅 IP、195+ 国家，支持 HTTP/3 高速连接，价格 $0.60/GB 起。
 </a>
-<br>
-<a href="https://www.thordata.com/products/residential-proxies/?ls=github&lk=mediacrawler">【住宅代理】</a> | <a href="https://www.thordata.com/products/web-scraper/?ls=github&lk=mediacrawler">【serp-api】</a>
 
+---
 
 ## 🤝 成为赞助者
 
@@ -275,6 +278,31 @@ Thordata：可靠且经济高效的代理服务提供商。为企业和开发者
 **联系方式**：
 - 微信：`relakkes`
 - 邮箱：`relakkes@gmail.com`
+---
+
+## ☕ 请作者喝杯咖啡
+
+如果这个项目对您有帮助，欢迎打赏支持，您的每一份支持都是我持续更新的动力 ❤️
+
+<table>
+<tr>
+<td align="center" width="33%">
+<img src="docs/static/images/wechat_pay.jpeg" width="250" alt="微信赞赏"><br>
+<b>微信赞赏</b>
+</td>
+<td align="center" width="33%">
+<img src="docs/static/images/zfb_pay.png" width="250" alt="支付宝"><br>
+<b>支付宝</b>
+</td>
+<td align="center" width="33%">
+<a href="https://buymeacoffee.com/relakkes" target="_blank">
+<img src="docs/static/images/bmc_button.png" width="250" alt="Buy Me a Coffee">
+</a><br>
+<b>Buy Me a Coffee</b>
+</td>
+</tr>
+</table>
+
 ---
 
 ## 📚 其他

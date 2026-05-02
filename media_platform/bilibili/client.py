@@ -29,6 +29,7 @@ from urllib.parse import urlencode
 
 import httpx
 from playwright.async_api import BrowserContext, Page
+from tools.httpx_util import make_async_client
 
 import config
 from base.base_crawler import AbstractApiClient
@@ -59,6 +60,7 @@ class BilibiliClient(AbstractApiClient, ProxyRefreshMixin):
         self.timeout = timeout
         self.headers = headers
         self._host = "https://api.bilibili.com"
+        self.cookie_urls = ["https://www.bilibili.com"]
         self.playwright_page = playwright_page
         self.cookie_dict = cookie_dict
         # Initialize proxy pool (from ProxyRefreshMixin)
@@ -68,7 +70,7 @@ class BilibiliClient(AbstractApiClient, ProxyRefreshMixin):
         # Check if proxy has expired before each request
         await self._refresh_proxy_if_expired()
 
-        async with httpx.AsyncClient(proxy=self.proxy) as client:
+        async with make_async_client(proxy=self.proxy) as client:
             response = await client.request(method, url, timeout=self.timeout, **kwargs)
         try:
             data: Dict = response.json()
@@ -144,8 +146,11 @@ class BilibiliClient(AbstractApiClient, ProxyRefreshMixin):
             ping_flag = False
         return ping_flag
 
-    async def update_cookies(self, browser_context: BrowserContext):
-        cookie_str, cookie_dict = utils.convert_cookies(await browser_context.cookies())
+    async def update_cookies(self, browser_context: BrowserContext, urls: Optional[list[str]] = None):
+        cookie_str, cookie_dict = await utils.convert_browser_context_cookies(
+            browser_context,
+            urls=urls or self.cookie_urls,
+        )
         self.headers["Cookie"] = cookie_str
         self.cookie_dict = cookie_dict
 
@@ -222,7 +227,7 @@ class BilibiliClient(AbstractApiClient, ProxyRefreshMixin):
 
     async def get_video_media(self, url: str) -> Union[bytes, None]:
         # Follow CDN 302 redirects and treat any 2xx as success (some endpoints return 206)
-        async with httpx.AsyncClient(proxy=self.proxy, follow_redirects=True) as client:
+        async with make_async_client(proxy=self.proxy, follow_redirects=True) as client:
             try:
                 response = await client.request("GET", url, timeout=self.timeout, headers=self.headers)
                 response.raise_for_status()
