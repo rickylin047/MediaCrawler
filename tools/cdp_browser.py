@@ -317,9 +317,9 @@ class CDPBrowserManager:
         try:
             if config.CDP_CONNECT_EXISTING:
                 # For existing browser (e.g. chrome://inspect/#remote-debugging),
-                # Chrome exposes a WebSocket at /devtools/browser and may show a confirmation
-                # dialog to the user. Use ws:// with a longer timeout to wait for user confirmation.
-                ws_url = f"ws://localhost:{self.debug_port}/devtools/browser"
+                # get the real WebSocket URL from the /json/version API instead of
+                # hardcoding a path, because newer Chrome includes a UUID suffix.
+                ws_url = await self._get_browser_websocket_url(self.debug_port)
                 utils.logger.info(f"[CDPBrowserManager] Connecting to existing browser via CDP: {ws_url}")
                 utils.logger.info(
                     "[CDPBrowserManager] Please check your browser for a confirmation dialog and accept it"
